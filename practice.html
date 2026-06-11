@@ -75,6 +75,14 @@
         list.innerHTML = '<div class="card"><div class="empty"><div class="icon">📭</div><p>No passages in this subject yet.</p></div></div>';
         return;
       }
+      // Sort: not attempted first, then attempted (completed drops to bottom)
+      shown.sort(function (a, b) {
+        const aDone = !!attempted[a.id];
+        const bDone = !!attempted[b.id];
+        if (aDone && !bDone) return 1;   // a is done, b is not -> a goes after
+        if (!aDone && bDone) return -1;  // a is not done, b is -> a goes before
+        return 0; // preserve original order within each group
+      });
       list.innerHTML = shown.map(function (p) {
         const diffClass = (p.difficulty || "").toLowerCase();
         const done = attempted[p.id];
