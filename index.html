@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MedPrep MCAT — Practice Platform</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="logo">M<small>P</small></span> MedPrep</a>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="practice.html" data-page="practice">Practice</a>
+        <a href="analytics.html" data-page="analytics">Analytics</a>
+        <a href="data.html" data-page="data">Data</a>
+      </div>
+      <div class="nav-spacer"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <h1>Master the MCAT, one passage at a time.</h1>
+      <p>Realistic exam-interface practice passages, detailed solutions, and analytics that
+         track your accuracy over time — all stored privately in your browser.</p>
+      <a class="btn btn-primary" href="practice.html">Start Practicing →</a>
+      <a class="btn btn-ghost" href="analytics.html" style="margin-left:10px;">View Analytics</a>
+    </section>
+
+    <!-- TODAY SNAPSHOT -->
+    <div class="card" style="margin-bottom:28px;">
+      <h2>Today at a glance</h2>
+      <div class="grid cols-3" id="todayStats">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- THREE SECTIONS -->
+    <div class="grid cols-3">
+      <a class="feature" href="practice.html">
+        <div class="ficon" style="background:#e6f1f4;color:var(--teal);">📝</div>
+        <h3>Practice</h3>
+        <p>Work through full passages in a realistic Pearson-style test interface with highlight,
+           strikethrough, flagging, and a timer. Review detailed solutions afterward.</p>
+        <div class="arrow">Browse passages →</div>
+      </a>
+
+      <a class="feature" href="analytics.html">
+        <div class="ficon" style="background:#eef0ff;color:var(--accent);">📊</div>
+        <h3>Analytics</h3>
+        <p>See your daily accuracy, a score donut, and breakdowns by subject, topic, and
+           difficulty — plus your strongest and weakest areas over time.</p>
+        <div class="arrow">Open dashboard →</div>
+      </a>
+
+      <a class="feature" href="data.html">
+        <div class="ficon" style="background:#fff3da;color:#9a7400;">💾</div>
+        <h3>Data</h3>
+        <p>Your progress lives in this browser. Download a save file to back it up, then
+           upload it later — on any device — to pick up right where you left off.</p>
+        <div class="arrow">Manage your data →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- scripts -->
+  <script src="js/constants.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="passages/trypanosoma.js"></script>
+  <script src="passages/neurulation.js"></script>
+  <script src="passages/porcine-oocyte.js"></script>
+  <script src="passages/endometriosis.js"></script>
+  <script src="passages/discrete-reproduction.js"></script>
+  <script src="js/passages-index.js"></script>
+  <script>
+    MCAT.UI.initNav("home");
+
+    // Today snapshot
+    (function () {
+      const today = MCAT.Store.todaysAttempts();
+      const t = MCAT.Store.totals(today);
+      const overall = MCAT.Store.totals();
+      const el = document.getElementById("todayStats");
+      el.innerHTML = `
+        <div>
+          <div class="txt-muted" style="font-size:13px;">Passages today</div>
+          <div style="font-size:30px;font-weight:800;">${t.attempts}</div>
+        </div>
+        <div>
+          <div class="txt-muted" style="font-size:13px;">Today's accuracy</div>
+          <div style="font-size:30px;font-weight:800;color:${t.answered ? 'var(--green)' : 'var(--muted)'};">
+            ${t.answered ? t.accuracy + '%' : '—'}</div>
+          <div class="txt-muted" style="font-size:12px;">${t.correct}/${t.answered || 0} correct</div>
+        </div>
+        <div>
+          <div class="txt-muted" style="font-size:13px;">All-time questions answered</div>
+          <div style="font-size:30px;font-weight:800;">${overall.answered}</div>
+          <div class="txt-muted" style="font-size:12px;">${overall.accuracy}% accurate overall</div>
+        </div>`;
+    })();
+  </script>
+</body>
+</html>

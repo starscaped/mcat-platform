@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics — MedPrep MCAT</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="logo">M<small>P</small></span> MedPrep</a>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="practice.html" data-page="practice">Practice</a>
+        <a href="analytics.html" data-page="analytics">Analytics</a>
+        <a href="data.html" data-page="data">Data</a>
+      </div>
+      <div class="nav-spacer"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 class="page-title">Your MCAT Progress</h1>
+        <p class="page-sub">Tracked from your completed passages. Data stays in this browser.</p>
+      </div>
+      <button class="btn btn-danger btn-sm" id="resetBtn">Reset All</button>
+    </div>
+
+    <!-- Daily accuracy -->
+    <div class="card" style="margin-bottom:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:10px;">
+        <h2 style="margin:0;">Daily Accuracy</h2>
+        <div class="toolbar-row" style="margin:0;">
+          <div class="seg" id="rangeSeg">
+            <button data-r="today">Today</button>
+            <button data-r="week">Last Week</button>
+            <button data-r="all" class="active">All</button>
+            <button data-r="custom">Custom</button>
+          </div>
+          <div id="customRange" style="display:none;gap:8px;">
+            <input type="date" class="date-field" id="startDate">
+            <span style="align-self:center;color:var(--muted);">→</span>
+            <input type="date" class="date-field" id="endDate">
+          </div>
+        </div>
+      </div>
+      <div id="lineChart"></div>
+    </div>
+
+    <!-- Score + Usage -->
+    <div class="grid cols-2" style="margin-bottom:18px;">
+      <div class="card">
+        <h2>Your Score</h2>
+        <div class="donut-wrap">
+          <div class="donut" id="scoreDonut"></div>
+          <div style="flex:1;" id="scoreList"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Your Usage</h2>
+        <div class="donut-wrap">
+          <div class="donut" id="usageDonut"></div>
+          <div style="flex:1;" id="usageList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strong / weak topics -->
+    <div class="grid cols-2" style="margin-bottom:18px;">
+      <div class="card"><h2>Strongest Topics</h2><div id="strongTopics"></div></div>
+      <div class="card"><h2>Weakest Topics</h2><div id="weakTopics"></div></div>
+    </div>
+
+    <!-- Subject breakdown -->
+    <div class="card" style="margin-bottom:18px;">
+      <h2>Your Breakdown by Subject</h2>
+      <table class="tbl">
+        <thead><tr><th>Subject</th><th>Correct</th><th>Incorrect</th><th>Incomplete</th></tr></thead>
+        <tbody id="subjectRows"></tbody>
+      </table>
+    </div>
+
+    <!-- Difficulty breakdown -->
+    <div class="card" style="margin-bottom:18px;">
+      <h2>Your Breakdown by Difficulty</h2>
+      <table class="tbl">
+        <thead><tr><th>Difficulty Range</th><th>Correct</th><th>Incorrect</th><th>Incomplete</th></tr></thead>
+        <tbody id="difficultyRows"></tbody>
+      </table>
+    </div>
+
+    <!-- Previous activity -->
+    <div class="card">
+      <h2>Your Previous Activity</h2>
+      <table class="tbl">
+        <thead><tr><th>Passage</th><th>Difficulty</th><th>Correct</th><th>Incorrect</th><th>Accuracy</th><th>Time / Date</th></tr></thead>
+        <tbody id="activityRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/constants.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/charts.js"></script>
+  <script>MCAT.UI.initNav("analytics");</script>
+  <script src="js/analytics.js"></script>
+</body>
+</html>

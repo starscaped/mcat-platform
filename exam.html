@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exam — MedPrep MCAT</title>
+  <link rel="stylesheet" href="css/exam.css">
+</head>
+<body>
+<div id="app">
+  <!-- Top header -->
+  <div class="top-header">
+    <span class="left"><span id="examTitle">Passage</span></span>
+    <span class="mid" id="examSubject"></span>
+    <span class="right">
+      <a class="exit" href="practice.html" title="Exit to passage list">&#10005; Exit</a>
+      <span class="timer">Time Remaining&nbsp; <span id="clock">00:00:00</span></span>
+    </span>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="item-counter">Item <span id="itemNow">1</span> of <span id="itemTotal">0</span></div>
+    <div class="tools">
+      <button class="tool-btn" id="tHL" onclick="EXAM.setTool('hl')" title="Highlight (Alt+H)">
+        <span class="ic">&#128396;</span><span>Highlight</span></button>
+      <button class="tool-btn" id="tST" onclick="EXAM.setTool('st')" title="Strikethrough (Alt+S)">
+        <span class="ic" style="text-decoration:line-through;">A</span><span>Strikethrough</span></button>
+    </div>
+    <div class="spacer"></div>
+    <button class="solution-toggle" id="solBtn" onclick="EXAM.toggleReveal()">Show Solution</button>
+  </div>
+
+  <!-- Panes -->
+  <div class="panes">
+    <div class="pane left">
+      <div class="passage-title" id="passageHeading">Passage 1</div>
+      <div id="passageBody"></div>
+    </div>
+    <div class="pane right" id="questionPane"></div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="bl">
+      <button class="flag-btn" id="flagBtn" onclick="EXAM.toggleFlag()">
+        <span class="flag">&#9873;</span><span id="flagTxt">Flag for Review</span></button>
+    </div>
+    <div class="br">
+      <button class="nav-btn secondary" onclick="EXAM.openModal('nav')">Navigation</button>
+      <button class="nav-btn secondary" onclick="EXAM.openModal('review')">Review</button>
+      <button class="nav-btn" id="prevBtn" onclick="EXAM.go(-1)">&#9664; Previous</button>
+      <button class="nav-btn" id="nextBtn" onclick="EXAM.onNext()">Next &#9654;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Navigator / Review modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)EXAM.closeModal()">
+  <div class="modal">
+    <div class="modal-head"><span id="modalTitle">Navigation</span>
+      <button onclick="EXAM.closeModal()">&times;</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Results modal -->
+<div class="overlay" id="resOverlay" onclick="if(event.target===this)EXAM.closeResults()">
+  <div class="modal results">
+    <div class="modal-head"><span>Section Results</span>
+      <button onclick="EXAM.closeResults()">&times;</button></div>
+    <div class="score-hero">
+      <div class="score-big" id="scoreBig">0 / 0</div>
+      <div class="score-sub" id="scoreSub"></div>
+      <div class="score-meta">
+        <div>Time used<b id="timeUsed">0:00</b></div>
+        <div>Correct<b id="numCorrect" style="color:#1c7a32;">0</b></div>
+        <div>Incorrect<b id="numWrong" style="color:#b3232b;">0</b></div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <table class="restbl"><thead>
+        <tr><th>Item</th><th>Your answer</th><th>Correct</th><th>Result</th><th>% correct</th></tr>
+      </thead><tbody id="resRows"></tbody></table>
+    </div>
+    <div class="modal-foot">
+      <a class="nav-btn secondary" href="analytics.html">View Analytics</a>
+      <div class="right">
+        <a class="nav-btn secondary" href="practice.html">Back to Passages</a>
+        <button class="nav-btn" onclick="EXAM.reviewSolutions()">Review Solutions &#9654;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/constants.js"></script>
+<script src="js/store.js"></script>
+<script src="passages/trypanosoma.js"></script>
+  <script src="passages/neurulation.js"></script>
+  <script src="passages/porcine-oocyte.js"></script>
+  <script src="passages/endometriosis.js"></script>
+  <script src="passages/discrete-reproduction.js"></script>
+<script src="js/passages-index.js"></script>
+<script src="js/exam.js"></script>
+</body>
+</html>

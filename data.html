@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data — MedPrep MCAT</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="logo">M<small>P</small></span> MedPrep</a>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="practice.html" data-page="practice">Practice</a>
+        <a href="analytics.html" data-page="analytics">Analytics</a>
+        <a href="data.html" data-page="data">Data</a>
+      </div>
+      <div class="nav-spacer"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="page-title">Your Data</h1>
+    <p class="page-sub">Your progress is stored privately in this browser (no account, no server).
+       Back it up to a file, then restore it later or on another device.</p>
+
+    <div id="storageWarn" style="display:none;background:#fff7e0;border:1px solid #e0c277;color:#7a5b00;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:14px;">
+      <b>Heads up:</b> this browser isn't letting the app save automatically (private mode, or this exact file context).
+      Your progress will be lost when you close the tab unless you <b>download a save file</b> below and re-import it next time.
+    </div>
+
+    <div class="grid cols-2">
+      <!-- Export -->
+      <div class="card">
+        <div class="ficon" style="width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#e6f1f4;color:var(--teal);margin-bottom:12px;">⬇️</div>
+        <h2>Download save file</h2>
+        <p class="txt-muted" style="font-size:14px;">Saves all your attempts and stats to a <code>.json</code> file you can keep as a backup.</p>
+        <div id="exportStats" style="margin:14px 0;"></div>
+        <button class="btn btn-primary" id="exportBtn">Download Save File</button>
+      </div>
+
+      <!-- Import -->
+      <div class="card">
+        <div class="ficon" style="width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#fff3da;color:#9a7400;margin-bottom:12px;">⬆️</div>
+        <h2>Restore from save file</h2>
+        <p class="txt-muted" style="font-size:14px;">Upload a previously downloaded save file. This <b>replaces</b> the data currently in this browser.</p>
+        <input type="file" id="importFile" accept="application/json,.json" style="margin:14px 0;display:block;">
+        <button class="btn btn-ghost" id="importBtn">Restore Data</button>
+        <div id="importMsg" style="margin-top:12px;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card" style="margin-top:18px;border-color:#f3d6d6;">
+      <h2 class="txt-red">Danger zone</h2>
+      <p class="txt-muted" style="font-size:14px;">Permanently delete all saved progress in this browser. Consider downloading a save file first.</p>
+      <button class="btn btn-danger" id="wipeBtn">Erase All Data</button>
+    </div>
+
+    <!-- Raw view -->
+    <div class="card" style="margin-top:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">Raw save data</h2>
+        <button class="btn btn-ghost btn-sm" id="copyBtn">Copy JSON</button>
+      </div>
+      <pre id="rawData" style="background:#0f1722;color:#cfe3ee;padding:16px;border-radius:10px;overflow:auto;max-height:320px;font-size:12px;line-height:1.5;margin-top:14px;"></pre>
+    </div>
+  </div>
+
+  <script src="js/constants.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    MCAT.UI.initNav("data");
+
+    function refresh() {
+      const d = MCAT.Store.getData();
+      const t = MCAT.Store.totals();
+      const warnEl = document.getElementById("storageWarn");
+      if (warnEl) warnEl.style.display = MCAT.storagePersistent() ? "none" : "block";
+      document.getElementById("exportStats").innerHTML =
+        '<div class="stat-row"><span class="k">Passages attempted</span><span class="v">' + d.attempts.length + '</span></div>' +
+        '<div class="stat-row"><span class="k">Questions answered</span><span class="v">' + t.answered + '</span></div>' +
+        '<div class="stat-row"><span class="k">Overall accuracy</span><span class="v">' + t.accuracy + '%</span></div>';
+      document.getElementById("rawData").textContent = MCAT.Store.exportData();
+    }
+    refresh();
+
+    // Export
+    document.getElementById("exportBtn").onclick = function () {
+      const blob = new Blob([MCAT.Store.exportData()], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = "medprep-mcat-save-" + stamp + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      MCAT.UI.toast("Save file downloaded.");
+    };
+
+    // Import
+    document.getElementById("importBtn").onclick = function () {
+      const fileInput = document.getElementById("importFile");
+      const msg = document.getElementById("importMsg");
+      const f = fileInput.files[0];
+      if (!f) { msg.innerHTML = '<span class="txt-red">Choose a file first.</span>'; return; }
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const data = JSON.parse(reader.result);
+          MCAT.Store.replaceData(data);
+          msg.innerHTML = '<span class="txt-green">✓ Data restored successfully.</span>';
+          MCAT.UI.toast("Data restored.");
+          refresh();
+        } catch (e) {
+          msg.innerHTML = '<span class="txt-red">✗ Could not read that file: ' + e.message + '</span>';
+        }
+      };
+      reader.onerror = function () { msg.innerHTML = '<span class="txt-red">✗ Failed to read file.</span>'; };
+      reader.readAsText(f);
+    };
+
+    // Wipe
+    document.getElementById("wipeBtn").onclick = function () {
+      if (confirm("Permanently erase all saved progress in this browser?")) {
+        MCAT.Store.resetAll();
+        MCAT.UI.toast("All data erased.");
+        refresh();
+      }
+    };
+
+    // Copy
+    document.getElementById("copyBtn").onclick = function () {
+      const txt = MCAT.Store.exportData();
+      navigator.clipboard.writeText(txt).then(function () {
+        MCAT.UI.toast("Copied to clipboard.");
+      }, function () {
+        MCAT.UI.toast("Copy failed — select the text manually.");
+      });
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Practice — MedPrep MCAT</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="logo">M<small>P</small></span> MedPrep</a>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="practice.html" data-page="practice">Practice</a>
+        <a href="analytics.html" data-page="analytics">Analytics</a>
+        <a href="data.html" data-page="data">Data</a>
+      </div>
+      <div class="nav-spacer"></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="page-title">Practice Passages</h1>
+    <p class="page-sub">Choose a passage to begin. Each runs in a realistic exam interface.</p>
+
+    <div class="toolbar-row">
+      <div class="seg" id="subjFilter"></div>
+    </div>
+
+    <div id="passageList"></div>
+  </div>
+
+  <script src="js/constants.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="passages/trypanosoma.js"></script>
+  <script src="passages/neurulation.js"></script>
+  <script src="passages/porcine-oocyte.js"></script>
+  <script src="passages/endometriosis.js"></script>
+  <script src="passages/discrete-reproduction.js"></script>
+  <script src="js/passages-index.js"></script>
+  <script>
+    MCAT.UI.initNav("practice");
+
+    const passages = MCAT.getPassages();
+    const data = MCAT.Store.getData();
+
+    // attempted passage ids
+    const attempted = {};
+    data.attempts.forEach(function (a) { attempted[a.passageId] = (attempted[a.passageId] || 0) + 1; });
+
+    // build subject filter
+    const subjects = ["All"].concat(
+      Array.from(new Set(passages.map(function (p) { return p.subject; }))).sort()
+    );
+    let currentSubj = "All";
+    const segEl = document.getElementById("subjFilter");
+    segEl.innerHTML = subjects.map(function (s) {
+      return `<button data-s="${s}" class="${s === 'All' ? 'active' : ''}">${s}</button>`;
+    }).join("");
+    segEl.querySelectorAll("button").forEach(function (b) {
+      b.onclick = function () {
+        currentSubj = b.getAttribute("data-s");
+        segEl.querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        render();
+      };
+    });
+
+    function render() {
+      const list = document.getElementById("passageList");
+      const shown = passages.filter(function (p) { return currentSubj === "All" || p.subject === currentSubj; });
+      if (!shown.length) {
+        list.innerHTML = '<div class="card"><div class="empty"><div class="icon">📭</div><p>No passages in this subject yet.</p></div></div>';
+        return;
+      }
+      list.innerHTML = shown.map(function (p) {
+        const diffClass = (p.difficulty || "").toLowerCase();
+        const done = attempted[p.id];
+        const dot = done
+          ? '<span class="status-dot dot-done"></span>Attempted ' + done + '×'
+          : '<span class="status-dot dot-new"></span>Not attempted';
+        // QID range from the passage's questions
+        const qids = p.questions.map(function (q) { return q.qid; }).filter(Boolean);
+        let qidLabel = "";
+        if (qids.length === 1) qidLabel = "QID " + qids[0];
+        else if (qids.length > 1) qidLabel = "QID " + qids[0] + "\u2013" + qids[qids.length - 1];
+        return `
+          <div class="plist-row">
+            <div class="pmeta">
+              <div class="ptitle">${p.title}${qidLabel ? ' <span class="qid-tag">' + qidLabel + '</span>' : ''}</div>
+              <div class="psub">${p.subject} &middot; ${p.system}
+                &nbsp;<span class="pill ${diffClass}">${p.difficulty}</span>
+                &nbsp;&middot;&nbsp; <span style="font-size:12px;">${dot}</span></div>
+            </div>
+            <span class="badge-q">${p.questions.length} questions</span>
+            <a class="btn btn-primary btn-sm" href="exam.html?passage=${encodeURIComponent(p.id)}">Start</a>
+          </div>`;
+      }).join("");
+    }
+    render();
+  </script>
+</body>
+</html>
