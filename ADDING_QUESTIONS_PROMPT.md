@@ -187,18 +187,6 @@ MCAT.PASSAGE_ORDER = [
 ];
 ```
 
-Then add a `<script>` tag for each new passage file in **index.html**, **practice.html**,
-and **exam.html**, placed **after** the last existing `passages/*.js` tag and **before**
-`js/passages-index.js`. Pattern (anchor on the last existing passage script):
-
-```html
-<script src="passages/<existing-last>.js"></script>
-<script src="passages/<your-new-id>.js"></script>   <!-- add this line -->
-<script src="js/passages-index.js"></script>
-```
-
-(analytics.html and data.html do NOT load passages — leave them alone.)
-
 ---
 
 ## 5. Build + validate (must pass before you finish)
@@ -230,8 +218,7 @@ Run from `mcat-platform/`:
 
 ## Common pitfalls (avoid these)
 
-- ❌ Forgetting to add the `<script>` tag in all THREE of index/practice/exam.html →
-  passage won't appear or exam 404s.
+
 - ❌ A literal `</script>` in a JS comment/string → breaks the standalone page.
 - ❌ Raw non-ASCII (−, –, °, β, ≤) pasted into strings → use HTML entities.
 - ❌ Absolute image paths (`/images/...`) → use relative (`images/...`).
