@@ -13,7 +13,9 @@ MCAT.PASSAGE_ORDER = [
   "endometriosis",
   "discrete-reproduction",
   "scuba-diving",
-  "snare-complex"
+  "snare-complex",
+  "method-of-loci" // Depression & Method of Loci passage
+
 ];
 
 // Dynamically inject the script tags synchronously into the document loading stream
