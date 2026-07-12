@@ -17,13 +17,9 @@ A static, zero-build MCAT practice question platform. Deploys to Vercel in one s
 
 No accounts, no backend, no tracking — all data stays in the user's browser.
 
-## Two ways to use it
+## way to use it
 
 1. **Multi-file site** (`index.html`, `practice.html`, …) — the deployable version for Vercel.
-2. **Single self-contained file** (`standalone.html`) — everything (CSS, JS, images)
-   inlined into one HTML file with a hash-based router. Just **double-click it** to open
-   in any browser; no server, no internet, images included. Great for quick testing or
-   sharing one file. Rebuild it any time with `python3 build_standalone.py`.
 
 > Note: when opened directly via `file://`, a few browsers block automatic `localStorage`
 > saving. The app detects this, falls back to in-memory storage, and shows a banner in the
@@ -90,12 +86,7 @@ It documents the full extraction → data-file → registration → bundle → t
 1. Copy `passages/trypanosoma.js` to `passages/<your-id>.js` and edit the fields
    (see the schema comment at the top of that file). Put any figures in `images/`
    and reference them with relative paths like `images/your-figure.png`.
-2. Add a script tag for your new file in **index.html**, **practice.html**, and
-   **exam.html**, placed *before* `js/passages-index.js`:
-   ```html
-   <script src="passages/<your-id>.js"></script>
-   ```
-3. Add `"<your-id>"` to `MCAT.PASSAGE_ORDER` in `js/passages-index.js`.
+2. Add `"<your-id>"` to `MCAT.PASSAGE_ORDER` in `js/passages-index.js`.
 
 The passage will then appear in Practice, and its attempts will flow into Analytics
 (bucketed by the `subject`, `system`, and `difficulty` you set).
