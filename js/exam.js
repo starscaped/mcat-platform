@@ -31,6 +31,21 @@
   let recorded = false;
   const state = QUESTIONS.map(function () { return { selected: null, flagged: false, struck: {} }; });
 
+  // Timing & per-question duration tracking state
+  let elapsed = 0;
+  let timerStopped = false;
+  let lastTimeSnapshot = 0;
+  const questionTimes = QUESTIONS.map(function () { return 0; });
+
+  // Record elapsed duration on current question when leaving or submitting
+  function recordTimeSpent() {
+    const delta = elapsed - lastTimeSnapshot;
+    if (delta > 0 && cur >= 0 && cur < questionTimes.length) {
+      questionTimes[cur] += delta;
+    }
+    lastTimeSnapshot = elapsed;
+  }
+
   // ---- header / passage ----
   document.getElementById("examTitle").textContent = passage.title;
   document.getElementById("examSubject").textContent =
@@ -100,7 +115,9 @@
   function go(d) {
     const n = cur + d;
     if (n < 0 || n >= QUESTIONS.length) return;
-    cur = n; renderQuestion();
+    recordTimeSpent(); // Record elapsed time before navigating away
+    cur = n; 
+    renderQuestion();
   }
   function onNext() {
     if (cur === QUESTIONS.length - 1) { openResults(); return; }
@@ -168,21 +185,46 @@
     ov.classList.add("show");
   }
   function closeModal() { document.getElementById("overlay").classList.remove("show"); }
-  function jump(i) { cur = i; closeModal(); renderQuestion(); }
+  function jump(i) { 
+    recordTimeSpent(); // Record elapsed time before jumping
+    cur = i; 
+    closeModal(); 
+    renderQuestion(); 
+  }
 
-  // ---- timer ----
-  const TOTAL = (passage.estMinutes || Math.ceil(QUESTIONS.length * 1.5)) * 60;
-  let secs = TOTAL, elapsed = 0, timerStopped = false;
+  // ---- timer (stopwatch mode) ----
   function tick() {
     if (timerStopped) return;
-    if (secs <= 0) { openResults(); return; }
-    secs--; elapsed++;
-    const m = String(Math.floor(secs / 60)).padStart(2, "0");
-    const s = String(secs % 60).padStart(2, "0");
-    document.getElementById("clock").textContent = "00:" + m + ":" + s;
+    elapsed++;
+    
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+    const s = String(elapsed % 60).padStart(2, "0");
+    
+    document.getElementById("clock").textContent = h + ":" + m + ":" + s;
   }
+
+  // Automatically start counting on page load
   setInterval(tick, 1000);
-  function fmtTime(t) { const m = Math.floor(t / 60), s = t % 60; return m + ":" + String(s).padStart(2, "0"); }
+
+  // Formatting utility for the results summary screen
+  function fmtTime(t) { 
+    const m = Math.floor(t / 60); 
+    const s = t % 60; 
+    return m + ":" + String(s).padStart(2, "0"); 
+  }
+
+  // Toggle function for the start/pause button
+  function toggleStopwatch() {
+    timerStopped = !timerStopped;
+    const btn = document.getElementById("timerToggleBtn");
+    if (btn) {
+      btn.textContent = timerStopped ? "Start" : "Pause";
+    }
+  }
+
+  // Expose toggle function globally so the button in HTML can trigger it
+  window.toggleStopwatch = toggleStopwatch;
 
   // ---- results + record attempt ----
   function computeResult() {
@@ -213,11 +255,13 @@
       correct: result.correct,
       incorrect: result.incorrect,
       omitted: result.omitted,
-      answers: result.answers
+      answers: result.answers,
+      questionTimes: questionTimes // Saves array of seconds spent on each question
     });
   }
 
   function openResults() {
+    recordTimeSpent(); // Record final active question's elapsed time before closing
     timerStopped = true;
     const r = computeResult();
     recordAttempt(r);

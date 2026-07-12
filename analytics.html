@@ -93,6 +93,52 @@
     </div>
 
     <!-- Previous activity -->
+     <!-- Timing Breakdown by Question -->
+    <div class="card" style="margin-bottom:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:10px;">
+        <h2 style="margin:0;">Time Spent per Question</h2>
+        <select id="attemptSelect" style="
+          padding: 6px 12px;
+          border-radius: 4px;
+          border: 1px solid #ccc;
+          font-family: inherit;
+          max-width: 320px;
+          background: #fff;
+          cursor: pointer;
+        ">
+          <option value="">-- Select an attempt --</option>
+        </select>
+      </div>
+      
+      <div id="timingChartContainer" style="margin-top:20px;">
+        <!-- Placeholder when no data is loaded -->
+        <div id="noTimingData" style="color:var(--muted, #666); text-align:center; padding: 40px 0;">
+          Select an attempt from the dropdown above to view its question timing breakdown.
+        </div>
+        
+        <!-- Bar chart container -->
+        <div id="timingBars" style="
+          display: none;
+          align-items: flex-end;
+          gap: 12px;
+          height: 220px;
+          padding: 10px 0;
+          border-bottom: 2px solid #ddd;
+          margin-bottom: 8px;
+        ">
+          <!-- Populated dynamically via JS -->
+        </div>
+        
+        <!-- X-axis labels -->
+        <div id="timingLabels" style="
+          display: none;
+          gap: 12px;
+          margin-top: 4px;
+        ">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </div>
     <div class="card">
       <h2>Your Previous Activity</h2>
       <table class="tbl">
@@ -108,5 +154,190 @@
   <script src="js/charts.js"></script>
   <script>MCAT.UI.initNav("analytics");</script>
   <script src="js/analytics.js"></script>
+  <script>
+    (function () {
+      document.addEventListener("DOMContentLoaded", function () {
+        const selectEl = document.getElementById("attemptSelect");
+        const barsEl = document.getElementById("timingBars");
+        const labelsEl = document.getElementById("timingLabels");
+        const noDataEl = document.getElementById("noTimingData");
+
+        // Helper to find attempts across all common storage mechanisms
+        function findAttempts() {
+          console.group("Diagnostic: Searching for MCAT attempts data...");
+          
+          // 1. Try common Store methods
+          if (window.MCAT && window.MCAT.Store) {
+            console.log("MCAT.Store namespace found.");
+            const S = window.MCAT.Store;
+            const commonMethods = ["getAttempts", "all", "allAttempts", "get", "todaysAttempts"];
+            for (let m of commonMethods) {
+              if (typeof S[m] === "function") {
+                try {
+                  const res = S[m]();
+                  if (Array.isArray(res) && res.length > 0) {
+                    console.log("Successfully retrieved attempts via MCAT.Store." + m + "()");
+                    console.groupEnd();
+                    return res;
+                  }
+                } catch(e) {
+                  console.warn("Error calling MCAT.Store." + m + "()", e);
+                }
+              }
+            }
+          }
+
+          // 2. Scan localStorage keys directly
+          console.log("Scanning localStorage keys directly...");
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            try {
+              const val = JSON.parse(localStorage.getItem(key));
+              if (!val) continue;
+              
+              // Case A: The key holds a direct array of attempts
+              if (Array.isArray(val)) {
+                if (val.length > 0 && (val[0].passageId || val[0].correct !== undefined || val[0].title)) {
+                  console.log("Found attempts array inside localStorage key: '" + key + "'");
+                  console.groupEnd();
+                  return val;
+                }
+              }
+              // Case B: The key holds an object containing an attempts array (e.g., { attempts: [...] })
+              if (typeof val === "object") {
+                for (let prop in val) {
+                  if (Array.isArray(val[prop])) {
+                    if (val[prop].length > 0 && (val[prop][0].passageId || val[prop][0].title)) {
+                      console.log("Found attempts array inside key: '" + key + "' under property: '" + prop + "'");
+                      console.groupEnd();
+                      return val[prop];
+                    }
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+          
+          console.warn("No attempts arrays were found in storage.");
+          console.groupEnd();
+          return [];
+        }
+
+        const attempts = findAttempts();
+
+        if (attempts.length === 0) {
+          selectEl.innerHTML = '<option value="">No attempts completed yet</option>';
+          noDataEl.textContent = "No attempts found. Please complete a passage first to see statistics.";
+          return;
+        }
+
+        // Populate selections (Showing ALL attempts)
+        selectEl.innerHTML = '<option value="">-- Choose an attempt --</option>';
+        attempts.forEach(function (attempt, idx) {
+          const opt = document.createElement("option");
+          opt.value = idx;
+          const dateStr = attempt.date || "No Date";
+          const hasTiming = attempt.questionTimes && attempt.questionTimes.length > 0;
+          
+          opt.textContent = attempt.title + " (" + dateStr + ")" + (hasTiming ? "" : " [No timing data]");
+          selectEl.appendChild(opt);
+        });
+
+        function formatDuration(sec) {
+          if (sec < 60) return sec + "s";
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          return m + "m " + String(s).padStart(2, "0") + "s";
+        }
+
+        function renderTimingChart(attempt) {
+          barsEl.innerHTML = "";
+          labelsEl.innerHTML = "";
+
+          if (!attempt) {
+            noDataEl.textContent = "Select an attempt from the dropdown above to view its question timing breakdown.";
+            noDataEl.style.display = "block";
+            barsEl.style.display = "none";
+            labelsEl.style.display = "none";
+            return;
+          }
+
+          // Handle cases where the selected attempt does not have the new timing data
+          if (!attempt.questionTimes || !Array.isArray(attempt.questionTimes) || attempt.questionTimes.length === 0) {
+            noDataEl.innerHTML = "<span style='color:#b3232b;'>This attempt was recorded without per-question timing data.</span><br><br>Please clear your browser cache (Ctrl+F5 or Cmd+Shift+R) and complete a new passage to track per-question duration.";
+            noDataEl.style.display = "block";
+            barsEl.style.display = "none";
+            labelsEl.style.display = "none";
+            return;
+          }
+
+          noDataEl.style.display = "none";
+          barsEl.style.display = "flex";
+          labelsEl.style.display = "flex";
+
+          const times = attempt.questionTimes;
+          const maxSec = Math.max.apply(null, times) || 1;
+
+          times.forEach(function (time, i) {
+            const heightPercent = (time / maxSec) * 100;
+
+            const barWrapper = document.createElement("div");
+            barWrapper.style.cssText = "display:flex; flex-direction:column; align-items:center; flex:1; height:100%; justify-content:flex-end;";
+
+            const valLabel = document.createElement("span");
+            valLabel.style.cssText = "font-size:11px; font-weight:700; color:#4a5568; margin-bottom:4px; text-align:center;";
+            valLabel.textContent = formatDuration(time);
+
+            const bar = document.createElement("div");
+            bar.style.cssText = "width:70%; max-width:40px; min-width:14px; background-color:var(--teal, #008080); border-radius:3px 3px 0 0; transition:height 0.4s ease;";
+            bar.style.height = heightPercent + "%";
+
+            barWrapper.appendChild(valLabel);
+            barWrapper.appendChild(bar);
+            barsEl.appendChild(barWrapper);
+
+            const label = document.createElement("div");
+            label.style.cssText = "flex:1; text-align:center; font-size:12px; font-weight:700; color:var(--muted, #718096);";
+            label.textContent = "Q" + (i + 1);
+            labelsEl.appendChild(label);
+          });
+        }
+
+        // --- AUTOMATIC LOADING LOGIC ---
+        // Scan backwards (from newest to oldest) to find the first attempt with timing data
+        let defaultIdx = -1;
+        for (let i = attempts.length - 1; i >= 0; i--) {
+          const a = attempts[i];
+          if (a.questionTimes && Array.isArray(a.questionTimes) && a.questionTimes.length > 0) {
+            defaultIdx = i;
+            break;
+          }
+        }
+
+        // Fallback: If no timed runs exist yet, default to absolute newest attempt to display its cache reminder
+        if (defaultIdx === -1 && attempts.length > 0) {
+          defaultIdx = attempts.length - 1;
+        }
+
+        // Automatically set selection and load initial view
+        if (defaultIdx !== -1) {
+          selectEl.value = defaultIdx;
+          renderTimingChart(attempts[defaultIdx]);
+        } else {
+          renderTimingChart(null);
+        }
+
+        // Dropdown change listener
+        selectEl.addEventListener("change", function (e) {
+          const selectedIdx = e.target.value;
+          if (selectedIdx === "") {
+            renderTimingChart(null);
+          } else {
+            renderTimingChart(attempts[selectedIdx]);
+          }
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

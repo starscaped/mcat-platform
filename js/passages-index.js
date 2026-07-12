@@ -1,11 +1,9 @@
 /* Registry of all passages available in the question bank.
    To add a passage:
      1. Create passages/<id>.js (copy passages/trypanosoma.js).
-     2. Add a <script src="passages/<id>.js"></script> tag in the HTML files
-        that need it (practice.html and index.html), BEFORE this file.
-     3. Add its id to PASSAGE_ORDER below.
-
-   PASSAGES is populated by each passage file (window.PASSAGES[id] = {...}). */
+     2. Add its id to PASSAGE_ORDER below.
+     
+   This file now automatically injects the script tags for you. */
 window.MCAT = window.MCAT || {};
 
 MCAT.PASSAGE_ORDER = [
@@ -13,8 +11,14 @@ MCAT.PASSAGE_ORDER = [
   "neurulation",
   "porcine-oocyte",
   "endometriosis",
-  "discrete-reproduction"
+  "discrete-reproduction",
+  "scuba-diving" // Added your new scuba-diving passage here
 ];
+
+// Dynamically inject the script tags synchronously into the document loading stream
+MCAT.PASSAGE_ORDER.forEach(function (id) {
+  document.write('<script src="passages/' + id + '.js"></script>');
+});
 
 // Convenience accessor: array of passage objects in display order.
 MCAT.getPassages = function () {

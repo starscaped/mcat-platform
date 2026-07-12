@@ -14,7 +14,21 @@
     <span class="mid" id="examSubject"></span>
     <span class="right">
       <a class="exit" href="practice.html" title="Exit to passage list">&#10005; Exit</a>
-      <span class="timer">Time Remaining&nbsp; <span id="clock">00:00:00</span></span>
+      <!-- <span class="timer">Time Remaining&nbsp; <span id="clock">00:00:00</span></span>-->
+      <span class="timer">
+        Time Elapsed&nbsp; <span id="clock">00:00:00</span>
+        <button id="timerToggleBtn" onclick="toggleStopwatch()" style="
+          margin-left: 10px;
+          padding: 2px 8px;
+          font-size: 12px;
+          font-family: inherit;
+          background: #f0f0f0;
+          color: #333;
+          border: 1px solid #ccc;
+          border-radius: 3px;
+          cursor: pointer;
+        ">Pause</button>
+      </span>
     </span>
   </div>
 
@@ -95,11 +109,6 @@
 
 <script src="js/constants.js"></script>
 <script src="js/store.js"></script>
-<script src="passages/trypanosoma.js"></script>
-  <script src="passages/neurulation.js"></script>
-  <script src="passages/porcine-oocyte.js"></script>
-  <script src="passages/endometriosis.js"></script>
-  <script src="passages/discrete-reproduction.js"></script>
 <script src="js/passages-index.js"></script>
 <script src="js/exam.js"></script>
 </body>

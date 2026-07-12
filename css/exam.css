@@ -4,7 +4,7 @@ html, body { height: 100%; }
 body {
   margin: 0;
   font-family: Arial, Helvetica, "Liberation Sans", sans-serif;
-  font-size: 14px; color: #000; background: #6f7d8c; overflow: hidden;
+  font-size: 16px; color: #000; background: #6f7d8c; overflow: hidden;
 }
 #app { display: flex; flex-direction: column; height: 100vh; background: #d9d9d9; }
 
