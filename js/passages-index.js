@@ -14,8 +14,9 @@ MCAT.PASSAGE_ORDER = [
   "discrete-reproduction",
   "scuba-diving",
   "snare-complex",
-  "method-of-loci" // Depression & Method of Loci passage
-
+  "method-of-loci", // Depression & Method of Loci passage
+  "health-disparities", // Health disparities in minorities passage
+  "photorefraction" // Photorefraction & vision correction passage
 ];
 
 // Dynamically inject the script tags synchronously into the document loading stream
