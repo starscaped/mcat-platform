@@ -1,7 +1,7 @@
-# Prompt: Add MCAT questions from PDFs into the MedPrep platform
+# Prompt: Add MCAT questions from PDFs into the platform
 
-You are working inside the **MedPrep MCAT practice platform** — a static (no-build)
-HTML/CSS/JS site that also bundles into one `standalone.html`. Your job: take one or
+You are working inside the **uearth practice platofmr** — a static (no-build)
+HTML/CSS/JS site. Your job: take one or
 more **UWorld-style question PDFs** and add their passages, questions, explanations,
 and figures into the platform so they appear in Practice, run in the exam interface,
 and flow into Analytics.
@@ -16,7 +16,6 @@ PDF is genuinely unreadable or a question's correct answer is ambiguous.
 ```
 mcat-platform/
 ├── index.html, practice.html, exam.html, analytics.html, data.html
-├── build_standalone.py        # bundles everything into standalone.html
 ├── css/app.css, css/exam.css  # exam pane renders passage/explanation HTML
 ├── js/
 │   ├── constants.js           # MCAT.SUBJECTS, MCAT.DIFFICULTIES
@@ -84,8 +83,7 @@ for i,p in enumerate(doc):
 - If a figure is actually a simple data **table**, prefer recreating it as an HTML
   `<table class="passage-table">` (crisper than an image). See `porcine-oocyte.js`.
 
-Extract, then **optimize** (cap width 900px, PNG optimize) to keep `standalone.html`
-small. Save into `mcat-platform/images/` with descriptive, collision-proof names like
+Extract, then **optimize** (cap width 900px, PNG optimize). Save into `mcat-platform/images/` with descriptive, collision-proof names like
 `<shortid>_q<QID>_<topic>.png` (e.g. `pig_q401088_spermatogenesis.png`,
 `endo_fig1_vegf.png`):
 
@@ -103,7 +101,7 @@ im.save("mcat-platform/images/<name>.png", "PNG", optimize=True)
 
 - **A multi-question PDF that shares one passage** → ONE passage file with that passage
   and all its questions (e.g. `endometriosis.js`, 6 questions).
-- **Standalone/discrete questions** (no shared passage) → group several into ONE
+- **Standalone/discrete questions** (no shared passage) → group up to 6 questions into ONE
   "Discrete Questions: <theme>" set. Use a short intro paragraph as `passageHtml`
   explaining the questions are independent. See `discrete-reproduction.js`.
 - Pick a unique kebab-case `id` for each new file (used in URLs + save data). It must
@@ -203,22 +201,7 @@ and **exam.html**, placed **after** the last existing `passages/*.js` tag and **
 
 ---
 
-## 5. Update the standalone bundler
-
-In `build_standalone.py`, add each new file path to the `PASSAGE_FILES` list (this
-inlines its images as data URIs into `standalone.html`):
-
-```python
-PASSAGE_FILES = [
-    "passages/trypanosoma.js",
-    # ...existing...
-    "passages/<your-new-id>.js",
-]
-```
-
----
-
-## 6. Build + validate (must pass before you finish)
+## 5. Build + validate (must pass before you finish)
 
 Run from `mcat-platform/`:
 
@@ -227,80 +210,18 @@ Run from `mcat-platform/`:
    for f in passages/*.js js/*.js; do node --check "$f" || echo "FAIL $f"; done
    ```
 
-2. **Rebuild the standalone** and confirm script tags stay balanced (a stray
-   `</script>` would unbalance them):
-   ```bash
-   python3 build_standalone.py
-   python3 - <<'PY'
-   import re,subprocess
-   h=open('standalone.html').read()
-   o=[m.start() for m in re.finditer(r'<script>',h)]; c=[m.start() for m in re.finditer(r'</script>',h)]
-   assert len(o)==len(c)==2, f"unbalanced script tags: {len(o)} open / {len(c)} close"
-   for i,s in enumerate(o):
-       e=min(x for x in c if x>s); open(f'/tmp/b{i}.js','w').write(h[s+8:e])
-       r=subprocess.run(['node','--check',f'/tmp/b{i}.js'],capture_output=True,text=True)
-       print('block',i,'OK' if r.returncode==0 else 'FAIL '+r.stderr[:200])
-   print('inlined images:', h.count('data:image/png;base64'))
-   PY
-   ```
-
-3. **Headless end-to-end test** of the standalone (no browser needed beyond `node` + `jsdom`). Install jsdom (`npm install jsdom --no-save`)
-   and run a script that: loads `standalone.html` from `file://`, opens `#practice`,
-   then for each new passage opens `#exam/<id>`, answers every question with its
-   `.correct-ans` option, opens results, and asserts the score equals the number of
-   questions. Example:
-
-   ```js
-   const { JSDOM } = require('jsdom');
-   (async () => {
-     const errs = [];
-     const dom = await JSDOM.fromFile('mcat-platform/standalone.html', {
-       url: 'file:///x/standalone.html', runScripts: 'dangerously',
-       resources: 'usable', pretendToBeVisual: true,
-       beforeParse(w){ w.confirm=()=>1; w.alert=()=>{}; w.URL.createObjectURL=()=>'blob:x';
-         w.URL.revokeObjectURL=()=>{}; w.addEventListener('error',e=>errs.push(e.message)); }
-     });
-     await new Promise(r=>setTimeout(r,800));
-     const w=dom.window, d=w.document;
-     console.log('load errors:', errs.length?errs:'none');
-     for (const id of ['<your-new-id>', /* ...all new ids... */]) {
-       w.location.hash='#exam/'+id; w.dispatchEvent(new w.Event('hashchange'));
-       await new Promise(r=>setTimeout(r,200));
-       const n=+d.getElementById('itemTotal').textContent;
-       for (let i=0;i<n;i++){
-         const correct=[...d.querySelectorAll('#questionPane .choice')]
-           .find(c=>c.classList.contains('correct-ans'));
-         w.EXAM.clickChoice(correct.getAttribute('data-l'));
-         if(i<n-1) w.EXAM.go(1);
-       }
-       w.EXAM.openResults(); await new Promise(r=>setTimeout(r,50));
-       console.log(id, 'score', d.getElementById('scoreBig').textContent, '(expect', n+'/'+n+')');
-       w.EXAM.closeResults();
-     }
-     process.exit(0);
-   })();
-   ```
-
-   PASS criteria: `load errors: none`; every new passage shows in Practice with a
-   "QID …" tag; each exam loads with the right question count and a filled passage
-   pane; answering all correct gives a perfect score; and the analytics
-   `#analytics` view shows the new attempts. (Note: jsdom blocks `localStorage` on
-   `file://` — the app falls back to in-memory storage, which is expected and fine
-   for the test. Ignore the harmless `Not implemented: scrollTo` warning.)
-
-4. (Optional) Spot-check the multi-file site by serving it
+2. (Optional) Spot-check the multi-file site by serving it
    (`python3 -m http.server` in `mcat-platform/`) and loading
    `exam.html?passage=<id>` — allow ~2s for the passage scripts to load.
 
 ---
 
-## 7. Cleanup + report
+## 6. Cleanup + report
 
 - Delete any temporary extraction folders/scripts and the `node_modules` you created
   for testing (they are not part of the deployable site).
 - Keep: the new `passages/*.js`, the new `images/*.png`, and the edits to
-  `passages-index.js`, the three HTML files, and `build_standalone.py`, plus the
-  rebuilt `standalone.html`.
+  `passages-index.js`, the three HTML files.
 - Report a summary: for each PDF → which passage id it became, number of questions,
   QID range, difficulty, and how many figures were added. State the new platform
   totals (passages, questions) and that all validations passed.
@@ -311,8 +232,6 @@ Run from `mcat-platform/`:
 
 - ❌ Forgetting to add the `<script>` tag in all THREE of index/practice/exam.html →
   passage won't appear or exam 404s.
-- ❌ Forgetting `build_standalone.py`'s `PASSAGE_FILES` → standalone is missing the
-  new passage or its images.
 - ❌ A literal `</script>` in a JS comment/string → breaks the standalone page.
 - ❌ Raw non-ASCII (−, –, °, β, ≤) pasted into strings → use HTML entities.
 - ❌ Absolute image paths (`/images/...`) → use relative (`images/...`).
