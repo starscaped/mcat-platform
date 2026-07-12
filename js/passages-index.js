@@ -12,7 +12,8 @@ MCAT.PASSAGE_ORDER = [
   "porcine-oocyte",
   "endometriosis",
   "discrete-reproduction",
-  "scuba-diving"
+  "scuba-diving",
+  "snare-complex"
 ];
 
 // Dynamically inject the script tags synchronously into the document loading stream
