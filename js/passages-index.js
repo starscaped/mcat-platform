@@ -13,10 +13,15 @@ MCAT.PASSAGE_ORDER = [
   "endometriosis",
   "discrete-reproduction",
   "scuba-diving",
-  "snare-complex",
+  "snare-complex", // SNARE complex vesicle fusion passage
   "method-of-loci", // Depression & Method of Loci passage
   "health-disparities", // Health disparities in minorities passage
-  "photorefraction" // Photorefraction & vision correction passage
+  "photorefraction", // Photorefraction & vision correction passage
+  "suicide-factors", // Suicide risk factors and anomie passage
+  "insula-interoception", // Insula and interoception passage
+  "poverty-inequality", // Poverty, inequality, and health passage
+  "hif-intestinal-barrier", // HIF-1 and intestinal barrier function passage
+  "hemophilia-vitamin-k" // Hemophilia B and vitamin K passage
 ];
 
 // Dynamically inject the script tags synchronously into the document loading stream
